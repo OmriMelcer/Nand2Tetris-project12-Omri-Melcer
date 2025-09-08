@@ -12,19 +12,34 @@
  */ 
 class Memory {
     /** Initializes the class. */
+    static Array Ram, heap, freeList; // Linked list of available memory blocks
+    static int heapBase, defrag_counter;   // First RAM address available for allocation
+    static int heapLength, next, length;
+    static boolean heapFull; // Number of RAM addresses available for allocation
+    
     function void init() {
         // Pseudocode:
-        // 1. freeList = heapBase
-        // 2. freeList.length = heapLength
-        // 3. freeList.next = null
+        let heap = 2048;
+        let heapFull = false;
+        let heapLength = 16383 - heap;
+        let Ram = 0;
+        let next = 0;
+        let length = 1;
+        let freeList = heap;
+        let freeList[next] = -1;
+        let freeList[length] = heapLength - 2;
+        return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
+        return Ram[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
+        let Ram[address] = value;
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
@@ -41,21 +56,119 @@ class Memory {
         // 5. Return block
         // The figure MemoryTest/MemoryFreeListExample.png illustrates how
         // the freeList should look like.
+        var Array node, nodeN, tmp; 
+        let node = freeList;
+        let nodeN = node[next];
+        let tmp = 0;
+        if (heapFull) {return -1;} 
+        while (~(nodeN = (-1)))
+        {
+            if (nodeN[length]>(size + 2))
+            {
+                let tmp = nodeN;
+                let nodeN = (nodeN + nodeN[length]) - size;
+                let nodeN[next] = -2;
+                let nodeN[length] = size;
+                let tmp[length] = tmp[length] - (size + 2);
+                return nodeN + 2;
+            }
+            if ((size = nodeN[length]) | (size = (nodeN[length] - 1)))
+            {
+                let node[next] = nodeN[next];
+                let nodeN[next] = -2;
+                return nodeN + 2;
+            }
+            let node = nodeN;
+            let nodeN = nodeN [next];
+        }
+        if(freeList[length]>(size + 2))
+        {
+            
+            let node = (freeList + freeList[length]) - size;
+            let node[next] = (-2);
+            let node[length] = size;
+            let freeList[length] = freeList[length] - (size + 2);
+            return (node + 2);
+        }
+        if (size = freeList[length] | size = (freeList[length] - 1))
+        {
+            let tmp = freeList;
+            let freeList = freeList[next];
+            let tmp[next] = -2;
+            let heapFull = (freeList = (-1));
+            return (tmp + 2);
+        }
+        let heapFull = true;
+        return -1;     
     }
 
     /** De-allocates the given object (cast as an array) by making
      *  it available for future allocations. */
-    function void deAlloc(Array o) {
-        // Pseudocode:
-        // 1. segment = o - 1
-        // 2. Insert segment into the freeList
-    }    
+    function void deAlloc(Array o) 
+    {
+        var Array tmp,minus_two;
+        if (freeList = -1) 
+        {
+            let freeList = o - 2;
+            let freeList[next] = -1;
+            let heapFull = false;
+            return;
+        }
+        let tmp = freeList[next];
+        let freeList[next] = o - 2;
+        let minus_two = o - 2;
+        let minus_two[next] = tmp;
+        do Memory.defrag();
+        let heapFull = false;
+        return;
+    }
+    function void defrag() 
+    {
+        var Array node, nodeN, compare_with, tmp;
+        let compare_with = freeList;
+        let node = freeList;
+        let nodeN = node[next];
+        if (freeList = -1) {return;}
+        while (~(compare_with = -1))
+        {
+            let node = freeList;
+            let nodeN = node[next];
+            while (~(nodeN = -1))
+            {
+                if ((compare_with + compare_with[length] + 2) = nodeN)
+                {
+                    // do Output.printInt(111);
+                    // do Output.println();
+                	// do Sys.wait(6000);
+                    let compare_with[length] = compare_with[length] + nodeN[length] + 2;
+                    let node[next] = nodeN[next];
+                    let nodeN = nodeN[next];
+                }
+                else
+                {
+                    let node = nodeN;
+                    let nodeN = nodeN[next];
+                }
+            }
+            let compare_with = compare_with[next];
+        }
+        return;
+        
+    }
 
     /** Returns the maximal element contained in the given Array/object. 
      *  Assume inputs are initialized and contain at least one element. */
     function int max(Array o) {
-        // Hint: the algorithm you need to implement in Memory.alloc saves the
-        // size of the allocated block in the memory cell right before the 
-        // start of the block, and this can be used to implement Memory.max.
+        var int size, i, m, v;
+        let size = o[-1];   // number of elements in this allocated block
+        let i = 0;
+        let m = o[0];
+        while (i < size) 
+        {
+            let v = o[i];
+            let m = Math.max(m,v);
+            let i = i + 1;
+        }
+        return m;
     }
 }
