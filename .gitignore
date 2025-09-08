@@ -1,4 +1,8 @@
-# git ignored\
+# Ignore Hack VM compilation output
 *.vm
-*.vscode
 
+# Ignore VS Code settings folder
+.vscode/
+
+# Ignore all testing directories (any depth)
+**/*[Tt]est*/
