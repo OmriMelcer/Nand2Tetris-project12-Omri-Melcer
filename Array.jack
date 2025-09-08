@@ -13,10 +13,18 @@
  */
 class Array {
     /** Constructs a new Array of the given size. */
+    
     function Array new(int size) {
+        var int base;
+        let base = Memory.alloc(size);
+        if (base = -1) {
+            return null; // allocation failed
+        }
+        return base;
     }
-
     /** Disposes this array. */
     method void dispose() {
+        do Memory.deAlloc(this);
+        return;
     }
 }
