@@ -20,16 +20,23 @@ class Output {
 
     // Character map for displaying characters
     static Array charMaps; 
+    static int cursorRow, cursorCol, left_side_zeroes, right_side_zeroes; // the current cursor position
 
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
+        do Output.initMap();
+        let cursorRow = 0;
+        let cursorCol = 0;
+        let left_side_zeroes = 255;
+        let right_side_zeroes = -256;
+        return;
     }
 
     // Initializes the character map array
     function void initMap() {
         var int i;
     
-        let charMaps = Array.new(127);
+        let charMaps    = Array.new(127);
         
         // Black square, used for displaying non-printable characters.
         do Output.create(0,63,63,63,63,63,63,63,63,63,0,0);
@@ -73,7 +80,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0);          // A ** TO BE FILLED **
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -178,30 +185,123 @@ class Output {
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
+        var int address;
+        let cursorRow = i;
+        let cursorCol = j;
+        let address = Output.get_block(i, j);
+        do Output.paint_char_white(cursorRow, cursorCol);
+        do Memory.poke(address, 0);
+        return;
     }
-
+    function void paint_char_white(int row, int col) {
+        var int address, i, current_value;
+        var boolean left_side;
+        // checks if col is even
+        let left_side = ~((col & 1) = 0); 
+        let address = Output.get_block(row, col);
+        let i = 0;
+        while (i<11) {
+            let current_value = Memory.peek(address + (i*32));
+            if (left_side) {
+                let current_value = current_value & left_side_zeroes;
+            } else {
+                let current_value = current_value & right_side_zeroes;
+            }
+            do Memory.poke(address + (i*32), current_value);
+            let i = i + 1;
+        }
+        return;
+    }
+    function int get_block(int row, int col) {
+        // returns the top left pixel of the character block at (row,col)
+        // does not tell if should draw at the left or right side of the block.
+        let row = row *11;
+        let col = col *8;
+        return 16384 + (row * 32) + (col / 16);
+    }
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
     function void printChar(char c) {
         // Your implementation should be as efficient as possible.
         // For example, you can draw multiple pixels at once, for each row.
+        var Array map;
+        var int address, i, current_value, pushed_value;
+        var boolean left_side;
+        let map = Output.getMap(c);
+        let address = Output.get_block(cursorRow, cursorCol);
+        let left_side = ~((cursorCol & 1) = 0); // checks if col is even
+        let i = 0;
+        while (i<11) {
+            let current_value = Memory.peek(address + (i*32));
+            if (left_side) {
+                let pushed_value = Output.push_left_eight_times(map[i]);
+                let current_value = (current_value & left_side_zeroes) | (pushed_value);
+            } else 
+            {
+                let current_value = ((current_value & right_side_zeroes) | map[i]);
+            }
+            do Memory.poke(address + (i*32), current_value);
+            let i = i + 1;
+        }
+        if (cursorCol = 63)
+        {
+            let cursorCol = 0;
+            let cursorRow = cursorRow + 1;
+            if (cursorRow = 23) {
+                let cursorRow = 0;
+            }
+        } else {
+            let cursorCol = cursorCol + 1;
+        }
+        return; 
     }
 
+    function int push_left_eight_times(int num) {
+        var int i;
+        let i = 0;
+        while (i<8) {
+            let num = ^ num;
+            let i = i + 1;
+        }
+        return num;
+    }
     /** displays the given string starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printString(String s) {
+        var int i, len;
+        var char c;
+        let len = s.length();
+        let i = 0;
+        while (i < len) {
+            let c = s.charAt(i);
+            
+            do Output.printChar(c);
+            let i = i + 1;
+        }
+        return;
     }
 
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
-    function void printInt(int i) {
+    function void printInt(int i) 
+    {
+        var String s;
+        let s = String.new(6);
+        do s.setInt(i);
+        do Output.printString(s);
+        do s.dispose();
+        return;
     }
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+        do Output.moveCursor(cursorRow + 1, 0);
+        return;
     }
 
     /** Moves the cursor one column back. */
     function void backSpace() {
+        do Output.moveCursor(cursorRow, cursorCol - 1);
+        return;
     }
 }
