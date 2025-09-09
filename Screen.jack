@@ -1,0 +1,284 @@
+// This file is part of nand2tetris, as taught in The Hebrew University, and
+// was written by Aviv Yaish. It is an extension to the specifications given
+// [here](https://www.nand2tetris.org) (Shimon Schocken and Noam Nisan, 2017),
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0
+// Unported [License](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+
+    static boolean color; // current color: black (true) or white (false)
+
+    /** Initializes the Screen. */
+    function void init() {
+        let color = false;
+        do Screen.clearScreen();
+        let color = true;
+        return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int i, j, addr;
+        let i = 0;
+        let j = 0;
+        while (i < 256) {
+            while (j < 512) {
+                let addr = Screen.address(i,j);
+                do Memory.poke(addr, 0);
+                let j = j + 16;
+            }
+            let j = 0;
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+        *    Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+        let color = b;
+        return; 
+    }
+    function int address(int row, int col) {
+        // Pseudocode:
+        // 1. Compute and return the RAM address where the (col,row) pixel is
+        //    represented: 16384 + (32*row) + (col/16).
+        // Note: You can assume that 0 <= col < 512 and 0 <= row < 256.
+        var int addr;
+        let row = Screen.shift(row, 5, true); // row*32
+        let col = Screen.shift(col, 4, false); // col/16
+        let addr = 16384 + row + col;
+        return addr;
+    }
+    function void paint_pixel_at_col(int row, int col)
+    {
+        var int addr, val, bit, bit_index, i;
+        let addr = Screen.address(row, col);
+        let val = Memory.peek(addr);
+        let bit_index = col & 15;
+        let bit = 1;
+        let bit = Screen.shift(bit, bit_index, true);
+        if (color)
+            {let val = bit | val;}
+        else
+            {let val = val & (~bit);}
+        do Memory.poke(addr, val);           
+        return;
+    }
+
+    function int shift(int val, int times, boolean left)
+    {
+        var int i, res;
+        let res = val;
+        let i = 0;
+        while (i<times)
+        {
+            if (left) {
+                let res = ^res;
+            } else {
+                let res = #res;
+            }
+            let i = i + 1;
+        }
+        return res;
+    }
+    
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        // For this function, you will need to calculate the value x%16.
+        // It should be calculated quickly without using multiplication or
+        // division, using exactly one basic math/logical operation.
+        // In addition, calculating 16384 + y * 32 + x/16 should not use
+        // division or multiplication.
+        // Pseudocode:
+        // 1. Compute the RAM address where the (x,y) pixel is
+        //    represented: 16384 + (32*y) + (x/16).
+        // 2. Use Memory.peek to get the 16-bit value of this address
+        // 3. Use some bitwise operation to set (only) the bit that corresponds
+        //    to the pixel to the current color.
+        // 4. Use Memory.poke to write the modified 16-bit value to the RAM
+        // address.
+        do Screen.paint_pixel_at_col(y,x);
+        return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        // The case where x1 != x2 and y1 != y2 should be implemented without
+        // multiplication or division.
+        // Pseudocode:
+        // 1. let x = x1, y = y1, a = 0, b = 0, diff = 0
+        // 2. Compute dx and dy
+        // 3. while ((a <= dx) and (b <= dy))
+        // 4.   do drawPixel(x+a, y+b)
+        // 5.   if (diff < 0) { let a=a+1, diff=diff+dy }
+        // 6.   else          { let b=b+1, diff=diff-dx }
+        //
+        // The case where y1 == y2 can be implemented efficiently by
+        // trying to draw as many pixels as possible in a single assignment,
+        // similarly to Fill in project 4.
+        if (y1 = y2)
+        {
+            do Screen.paint_with_bits(x1,x2,y1);
+            return;
+        }
+        if ((x1-x2)*(y1-y2) < 0)
+        {
+            do Screen.draw_falling_line(x1,y1,x2,y2);
+            return;
+        }
+        do Screen.draw_rising_line(x1,y1,x2,y2);
+        return;
+    }
+
+    function void draw_rising_line(int x1, int y1, int x2, int y2)
+    {
+        var int a,b,x,y ,dx,dy,diff;
+        let x = Math.min(x1, x2);
+        let y = Math.min(y1,y2);
+        let dx = Math.abs (x1-x2);
+        let dy = Math.abs (y1-y2);
+        let a =0;
+        let b = 0;
+        let diff = 0;
+        while ((~(a>dx)) & (~(b>dy)))
+        {
+            do Screen.drawPixel(x+a, y+b);
+            if (diff< 0)
+            {
+                let a = a+1;
+                let diff = diff + dy;
+            }
+            else
+            {
+                let b = b+1;
+                let diff = diff - dx;
+            }
+        }
+        return;
+    }
+
+    function void draw_falling_line(int x1, int y1, int x2, int y2) {
+
+        var int a,b,x,y,dx,dy,diff;
+        let x = Math.min(x1, x2);
+        let y = Math.max(y1,y2);
+        let dx = Math.abs (x1-x2);
+        let dy = Math.abs (y1-y2);
+        let a =0;
+        let b = 0;
+        let diff = 0;
+        while ((~(a>dx)) & (~(b>dy)))
+        {
+            do Screen.drawPixel(x+a, y+b);
+            if (diff< 0)
+            {
+                let a = a+1;
+                let diff = diff + dy;
+            }
+            else
+            {
+                let b = b-1;
+                let diff = diff - dx;
+            }
+        }
+        return;
+    }
+
+    function void paint_with_bits(int x1, int x2, int y1)
+    {
+        var int x_s, x_b, bit_of_x1, bit_of_x2, i, addr_s, addr_b; 
+        let i =0; 
+        let x_s = Math.min(x1,x2);
+        let x_b = Math.max(x1,x2);
+        let bit_of_x1 = ((16 - (x_s & 15)));
+        let addr_s = Screen.address(y1, x_s);
+        let addr_b = Screen.address(y1, x_b);
+        if (addr_s = addr_b)
+        {
+            while (~((x_s+i)>x_b))
+            {
+                do Screen.paint_pixel_at_col(y1, x_s + i);
+                let i = i+ 1;
+            }
+            return;
+        }
+        // do Output.printInt(bit_of_x1);
+        // do Output.println();
+        // do Sys.wait (4000);
+        let bit_of_x2 = (x_b & 15) + 1;
+        while (i< bit_of_x1)
+        {
+            // do Output.printInt(Memory.peek(addr_s));
+            // do Output.println();
+            // do Sys.wait(4000);
+            do Screen.paint_pixel_at_col(y1, x_s + i);
+            let i = i+ 1;
+        }
+        let x_s = x_s + i;
+        let i = 0;
+        let addr_s = Screen.address(y1, x_s);
+        while (addr_s + i < addr_b)
+        {
+            do Memory.poke(addr_s + i, color);
+            let i = i + 1;
+        }
+        let i = 0;
+        while (i<bit_of_x2)
+        {
+            do Screen.paint_pixel_at_col(y1, x_b - bit_of_x2 - 1 + i);
+            let i = i+ 1;
+        }
+        return;
+    } 
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+        * and bottom right corner is (x2,y2), using the current color. */
+    
+    function void drawRectangle(int x1, int y1, int x2, int y2) 
+    {
+        var int  top_l_x, top_l_y, top_r_x, top_r_y, bot_l_x, bot_l_y, bot_r_x, bot_r_y, i;
+        let top_l_x = Math.min(x1,x2);
+        let top_l_y = Math.min(y1,y2);
+        let bot_r_x = Math.max(x1,x2);
+        let bot_r_y = Math.max(y1,y2);
+        let top_r_x = bot_r_x;
+        let top_r_y = top_l_y;
+        let bot_l_x = top_l_x;
+        let bot_l_y = bot_r_y;
+        let i = 0;
+        while (~(top_l_y+i>bot_r_y))
+        {
+            do Screen.drawLine(top_l_x, top_l_y+i, top_r_x, top_r_y+i);
+            let i = i+ 1;
+        }
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        // This can be implemented efficiently by drawing multiple lines at
+        // each iteration. You can use multiplication and sqrt.
+        // Pseudocode:
+        // 1. for (dy = -r ... r)
+        // 2.   let halfWidth = sqrt(r*r - dy*dy)
+        // 3.   do drawLine(x-halfWidth, y+dy, x+halfWidth, y+dy)
+        var int dy, halfWidth, r_squared;
+        if (r > 181) {
+            return; // radius too large
+        }
+        let r_squared = r * r;
+        let dy = -r;
+        while (~(dy > r)) {
+            let halfWidth = Math.sqrt(r_squared - (dy * dy));
+            do Screen.drawLine(x - halfWidth, y + dy, x + halfWidth, y + dy);
+            let dy = dy + 1;
+        }
+        return;
+    }
+}
