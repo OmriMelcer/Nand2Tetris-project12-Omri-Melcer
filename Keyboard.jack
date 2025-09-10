@@ -46,12 +46,13 @@ class Keyboard {
         function char readChar() {
             var char c,v;
             // Wait until a key is pressed
-            while (Keyboard.keyPressed() = 0) { let c = Keyboard.keyPressed();}
-            let c = Keyboard.keyPressed();
+            while (keyPressed() = 0) { let c = keyPressed();}
+            let c = keyPressed();
             // Wait for release (debounce)
-            while (~(Keyboard.keyPressed() = 0)) { let v = Keyboard.keyPressed();}
-            // Echo the character (no trailing space)
+            while (~(keyPressed() = 0)) { let v = keyPressed();}
+            // Echo the character
             do Output.printChar(c);
+            do Output.printChar(32); // print space to separate chars
             return c;
         }
 
@@ -70,29 +71,26 @@ class Keyboard {
             let str = String.new(maxLen);
             let len = 0;
             while (true) {
-                let c = Keyboard.readChar();  // already echoed
+                let c = readChar();  // already echoed
                 if (c = String.newLine()) {
                     // newline already printed by readChar
                     return str;
+                } else if (c = String.backSpace()) {
+                    if (len > 0) {
+                        do Output.backSpace();
+                        do str.eraseLastChar();
+                        let len = len - 1;
+                    }
                 } else {
-                    if (c = String.backSpace()) {
-                        if (len > 0) {
-                            do Output.backSpace();
-                            do str.eraseLastChar();
-                            let len = len - 1;
-                        }
+                    if (len < maxLen) {
+                        do str.appendChar(c);
+                        let len = len + 1;
                     } else {
-                        if (len < maxLen) {
-                            do str.appendChar(c);
-                            let len = len + 1;
-                        } else {
-                            // At width limit: remove echoed char visually
-                            do Output.backSpace();
-                        }
+                        // At width limit: remove echoed char visually
+                        do Output.backSpace();
                     }
                 }
             }
-            return str; // dummy return to avoid Jack syntax error
         }     
 
         /**								
@@ -104,7 +102,7 @@ class Keyboard {
         function int readInt(String message) {
             var String line;
             var int i, n, sign, c, L;
-            let line = Keyboard.readLine(message);
+            let line = readLine(message);
             let L = line.length();
             let i = 0;
             let n = 0;

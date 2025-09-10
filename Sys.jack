@@ -41,7 +41,7 @@ class Sys {
         let j = 30000;
         while (i<32000)
         {
-            while (j<25)
+            while (j<30)
             {
                 let j=j+1;
             }
