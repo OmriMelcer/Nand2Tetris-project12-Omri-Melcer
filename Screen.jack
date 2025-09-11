@@ -16,8 +16,8 @@ class Screen {
 
     /** Initializes the Screen. */
     function void init() {
-        let color = false;
-        do Screen.clearScreen();
+        // let color = false;
+        //do Screen.clearScreen();
         let color = true;
         return;
     }
@@ -110,32 +110,28 @@ class Screen {
 
     /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
     function void drawLine(int x1, int y1, int x2, int y2) {
-        // The case where x1 != x2 and y1 != y2 should be implemented without
-        // multiplication or division.
-        // Pseudocode:
-        // 1. let x = x1, y = y1, a = 0, b = 0, diff = 0
-        // 2. Compute dx and dy
-        // 3. while ((a <= dx) and (b <= dy))
-        // 4.   do drawPixel(x+a, y+b)
-        // 5.   if (diff < 0) { let a=a+1, diff=diff+dy }
-        // 6.   else          { let b=b+1, diff=diff-dx }
-        //
-        // The case where y1 == y2 can be implemented efficiently by
-        // trying to draw as many pixels as possible in a single assignment,
-        // similarly to Fill in project 4.
-        if (y1 = y2)
-        {
-            do Screen.paint_with_bits(x1,x2,y1);
-            return;
-        }
-        if ((x1-x2)*(y1-y2) < 0)
-        {
-            do Screen.draw_falling_line(x1,y1,x2,y2);
-            return;
-        }
-        do Screen.draw_rising_line(x1,y1,x2,y2);
+    var int dx, dy;
+
+    // horizontal line optimization
+    if (y1 = y2) {
+        do Screen.paint_with_bits(x1, x2, y1);
         return;
     }
+
+    // compute differences
+    let dx = x1 - x2;
+    let dy = y1 - y2;
+
+    // check if slope is negative (dx and dy opposite signs)
+    if (((dx < 0) & (dy > 0)) | ((dx > 0) & (dy < 0))) {
+        do Screen.draw_falling_line(x1, y1, x2, y2);
+        return;
+    }
+    // otherwise slope is positive
+    do Screen.draw_rising_line(x1, y1, x2, y2);
+    return;
+    }
+
 
     function void draw_rising_line(int x1, int y1, int x2, int y2)
     {

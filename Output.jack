@@ -194,20 +194,24 @@ class Output {
         return;
     }
     function void paint_char_white(int row, int col) {
-        var int address, i, current_value;
+        var int address, i, current_value, j;
+        // var int loc_right_side_zeroes, loc_left_side_zeroes;
+        // let loc_left_side_zeroes =
         var boolean left_side;
+        let j = 0;
         // checks if col is even
         let left_side = ~((col & 1) = 0); 
         let address = Output.get_block(row, col);
         let i = 0;
         while (i<11) {
-            let current_value = Memory.peek(address + (i*32));
+            let current_value = Memory.peek(address + (j));
             if (left_side) {
                 let current_value = current_value & left_side_zeroes;
             } else {
                 let current_value = current_value & right_side_zeroes;
             }
-            do Memory.poke(address + (i*32), current_value);
+            do Memory.poke(address + (j), current_value);
+            let j = j + 32;
             let i = i + 1;
         }
         return;
@@ -216,8 +220,27 @@ class Output {
         // returns the top left pixel of the character block at (row,col)
         // does not tell if should draw at the left or right side of the block.
         let row = row *11;
-        let col = col *8;
-        return 16384 + (row * 32) + (col / 16);
+        let col = Output.shift(col, 3, true); // col*8
+        let row = Output.shift(row, 5, true); // row*32
+        let col = Output.shift(col, 4, false); // col/16
+        return 16384 + row + col;
+    }
+
+    function int shift(int val, int times, boolean left)
+    {
+        var int i, res;
+        let res = val;
+        let i = 0;
+        while (i<times)
+        {
+            if (left) {
+                let res = ^res;
+            } else {
+                let res = #res;
+            }
+            let i = i + 1;
+        }
+        return res;
     }
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
@@ -225,14 +248,19 @@ class Output {
         // Your implementation should be as efficient as possible.
         // For example, you can draw multiple pixels at once, for each row.
         var Array map;
-        var int address, i, current_value, pushed_value;
+        var int address, i, current_value, pushed_value, j;
         var boolean left_side;
+        if (c = String.newLine()) {
+            do Output.println();
+            return;
+        }
         let map = Output.getMap(c);
         let address = Output.get_block(cursorRow, cursorCol);
         let left_side = ~((cursorCol & 1) = 0); // checks if col is even
         let i = 0;
+        let j = 0;
         while (i<11) {
-            let current_value = Memory.peek(address + (i*32));
+            let current_value = Memory.peek(address + (j));
             if (left_side) {
                 let pushed_value = Output.push_left_eight_times(map[i]);
                 let current_value = (current_value & left_side_zeroes) | (pushed_value);
@@ -240,18 +268,19 @@ class Output {
             {
                 let current_value = ((current_value & right_side_zeroes) | map[i]);
             }
-            do Memory.poke(address + (i*32), current_value);
+            do Memory.poke(address + (j), current_value);
             let i = i + 1;
+            let j = j+ 32;
         }
         if (cursorCol = 63)
         {
-            let cursorCol = 0;
-            let cursorRow = cursorRow + 1;
             if (cursorRow = 23) {
-                let cursorRow = 0;
+                do Output.moveCursor(0,0);
+                return;
             }
+            do Output.moveCursor(cursorRow + 1, 0);
         } else {
-            let cursorCol = cursorCol + 1;
+            do Output.moveCursor(cursorRow, cursorCol + 1);
         }
         return; 
     }

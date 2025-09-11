@@ -44,15 +44,22 @@ class Keyboard {
          * of the pressed key.
          */
         function char readChar() {
-            var char c,v;
+            var char c;
             // Wait until a key is pressed
-            while (keyPressed() = 0) { let c = keyPressed();}
-            let c = keyPressed();
+            while (Keyboard.keyPressed() = 0) { }
+            let c = Keyboard.keyPressed();
             // Wait for release (debounce)
-            while (~(keyPressed() = 0)) { let v = keyPressed();}
-            // Echo the character
-            do Output.printChar(c);
-            do Output.printChar(32); // print space to separate chars
+            while (~(Keyboard.keyPressed() = 0)) { }
+            // Echo behavior: backspace/newline are handled specially
+            if (c = String.backSpace()) {
+                do Output.backSpace();
+            } else {
+                if (c = String.newLine()) {
+                    do Output.println(); // move cursor to next line
+                } else {
+                    do Output.printChar(c);
+                }
+            }
             return c;
         }
 
@@ -71,26 +78,29 @@ class Keyboard {
             let str = String.new(maxLen);
             let len = 0;
             while (true) {
-                let c = readChar();  // already echoed
+                let c = Keyboard.readChar();  // already echoed
                 if (c = String.newLine()) {
                     // newline already printed by readChar
                     return str;
-                } else if (c = String.backSpace()) {
-                    if (len > 0) {
-                        do Output.backSpace();
-                        do str.eraseLastChar();
-                        let len = len - 1;
-                    }
                 } else {
-                    if (len < maxLen) {
-                        do str.appendChar(c);
-                        let len = len + 1;
+                    if (c = String.backSpace()) {
+                        if (len > 0) {
+                            do Output.backSpace();
+                            do str.eraseLastChar();
+                            let len = len - 1;
+                        }
                     } else {
-                        // At width limit: remove echoed char visually
-                        do Output.backSpace();
+                        if (len < maxLen) {
+                            do str.appendChar(c);
+                            let len = len + 1;
+                        } else {
+                            // At width limit: remove echoed char visually
+                            do Output.backSpace();
+                        }
                     }
                 }
             }
+            return ""; // dummy return to satisfy the compiler
         }     
 
         /**								
@@ -102,12 +112,13 @@ class Keyboard {
         function int readInt(String message) {
             var String line;
             var int i, n, sign, c, L;
-            let line = readLine(message);
+            let line = Keyboard.readLine(message);
             let L = line.length();
             let i = 0;
             let n = 0;
             let sign = 1;
-            if (L > 0) {
+            if (L > 0)
+            {
                 let c = line.charAt(0);
                 if (c = 45) { // '-'
                     let sign = -1;
