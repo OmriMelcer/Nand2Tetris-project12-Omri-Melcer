@@ -2,7 +2,7 @@
 # Creates a zip file containing all .jack files and AUTHORS file
 
 # Variables
-PROJECT_NAME = project
+PROJECT_NAME = project12
 ZIP_FILE = $(PROJECT_NAME).zip
 JACK_FILES = $(wildcard *.jack)
 AUTHORS_FILE = AUTHORS
