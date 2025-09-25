@@ -60,8 +60,8 @@ class Sys {
         let closer = 62; // >
         let message = "ERR<";
         do Output.printString(message);
-        do Output.printString(errorCode);
-        do Output.printString(closer);
+        do Output.printInt(errorCode);
+        do Output.printChar(closer);
         do message.dispose();
         return;
     }

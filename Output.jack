@@ -190,7 +190,7 @@ class Output {
         let cursorCol = j;
         let address = Output.get_block(i, j);
         do Output.paint_char_white(cursorRow, cursorCol);
-        do Memory.poke(address, 0);
+        //do Memory.poke(address, 0);
         return;
     }
     function void paint_char_white(int row, int col) {
@@ -274,7 +274,7 @@ class Output {
         }
         if (cursorCol = 63)
         {
-            if (cursorRow = 23) {
+            if (cursorRow = 22) {
                 do Output.moveCursor(0,0);
                 return;
             }
