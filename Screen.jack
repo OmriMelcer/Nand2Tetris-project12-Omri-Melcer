@@ -228,7 +228,7 @@ class Screen {
         let i = 0;
         while (i<bit_of_x2)
         {
-            do Screen.paint_pixel_at_col(y1, x_b - bit_of_x2 - 1 + i);
+            do Screen.paint_pixel_at_col(y1, (x_b - bit_of_x2) + 1 + i);
             let i = i+ 1;
         }
         return;
